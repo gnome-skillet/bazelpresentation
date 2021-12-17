@@ -1,0 +1,167 @@
+---
+title: "bazel"
+author: "Carlo Cosenza"
+date: "11/30/2021"
+output:
+  revealjs::revealjs_presentation:
+    theme: blood
+    highlight: pygments
+    center: true
+    incremental: true
+    self_contained: false
+    reveal_plugins: ["menu", "zoom"]
+---
+
+# Introduction
+
+## Experience
+
+- Systems Programmer
+- Statistician
+- Data Scientist & Data Engineer
+
+## Tools 
+
+  - Terraform
+  - Buildkite
+  - Phabricator
+  - Sourcegraph
+  - bazel
+
+## The General Problem 
+
+ - Standardizing on a Common Set of Tools
+ - Versioning (requirements.txt, gem) 
+ - Deployment
+ - Multiple Environments
+ - Poor Reproducibility
+
+## Compliance Challenges
+
+- Validation (IQ, OQ, PQ)
+- Regression 
+- Monitoring 
+- Environment 
+
+## Solution
+
+- Reproducible
+- Hermetic
+- Secure
+- Testable 
+
+## bazel
+
+Bazel is a free software tool for the automation of building and testing of software.
+
+... Similar to build tools like Make, Apache Ant, or Apache Maven, Bazel builds software applications from source code using a set of rules. Rules and macros are created in the Starlark language (previously called Skylark), a dialect of Python.
+
+<font size="3">[Wikipedia](https://en.wikipedia.org/wiki/Bazel_(software))</font>
+
+## Key Concepts
+
+- WORKSPACE
+- Package
+- BUILD
+- Bazel Rule
+- Target
+- Monorepo
+
+## Monorepo
+
+In version control systems, a monorepo is a software development strategy where code for many projects is stored in the same repository.
+
+- Reusable
+- Dependency Management
+- Atomic Commits
+- Large Scale Refactoring
+- Collaboration Across Teams
+
+<font size="3">[Wikipedia](https://en.wikipedia.org/wiki/Monorepo)</font>
+
+## WORKSPACE
+
+Define external dependencies.
+
+```{bash workspace, eval = FALSE}
+# WORKSPACE - external dependencies
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+git_repository(
+    name = "io_bazel_migration_tooling",
+    remote = "https://github.com/bazelbuild/migration-tooling",
+    commit = "be4bd8a8a953543a0e4fd2f5f0aa62d7bcca0830",
+)
+```
+
+## BUILD
+
+A package is the primary unit of code organization.
+
+```{bash build, eval = FALSE}
+py_library(
+  name = 'greeting',
+  srcs = ['greeting.py'],
+)
+
+py_binary(
+  name = 'hello',
+  main = 'hello.py',
+  srcs = ['hello.py'],
+  deps = [
+    ':greeting'
+  ],
+)
+```
+
+## Rule
+
+```{bash rule, eval = FALSE}
+def _foo_binary_impl(ctx):
+    out = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.write(
+        output = out,
+        content = "Hello!\n",
+    )
+    return [DefaultInfo(files = depset([out]))]
+```
+
+## Scenarios
+
+Dashboards:
+
+- Multiple Clinical Trials
+- Clinical Data Monitoring Needs Daily Statistics
+- Statisticians Need Weekly QC Checks for Data Lock 
+- CDM/Statistics primary tool is R
+
+## Taming the Dashboards
+
+```{bash dashboard, eval = FALSE}
+bazel run :docker_build_image
+bazel run :docker_load_ecr
+bazel run :terraform apply
+```
+- Dockerized containers built using **bazel**.
+- Containers pushed to AWS ECR.
+- Image deployed ECS with **terraform** called from **bazel**. 
+
+## Updating the Database 
+
+```{bash database, eval = FALSE}
+bazel run :ct_scraper
+ctscraper --latest
+bazel run :do_terraform
+bazel run :do_terraform plan
+```
+
+## Semi-live Demo
+
+- Use **bazel** to build and deploy a Python script
+- Use **bazel** to manage external dependencies and run automated unit tests 
+
+## Summary
+
+- Wrangling dependencies across multiple environments is difficult
+- **bazel** is an OS build and testing tool
+- **bazel** is environment agnostic, safely building tools within a sandbox
+- **bazel** simplifies deployments when coupled with a **Monorepo**
